@@ -6,20 +6,23 @@ import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 8))
 
-n = 50
+n = 25
 ax_factor = 0
 init_guess = [1,1]
+TMax = 100
 
 def equation(t):
-    return 0.1 * t * (10 - t)
+    A = 22     # amplitude (adjust as you like)
+    return A * np.sin(np.pi * t / TMax)
 
 def line_eq(vars):
     x, y = vars
-    spd_light = y + x - ax_factor # speed of light line traversing up the t axis
-    given_eq = y - x - 0.1 * y ** 2 # given equation
+    spd_light = y + x - ax_factor      # light ray
+    given_eq = x - equation(y)         # ship worldline
     return [spd_light, given_eq]
 
-time_values = np.linspace(0, 10, 400)
+
+time_values = np.linspace(0, TMax, 400)
 # difference in emission times
 dt_emit = time_values[1] - time_values[0]
 x_values = equation(time_values)
