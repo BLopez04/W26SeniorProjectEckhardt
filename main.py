@@ -6,13 +6,18 @@ import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 8))
 
+
+# Add Lorentz Factor to space out the green lines based on velocity of the ship
+# Lorentz factor based off of the velocity of the ship (the position derivative)
+# Add another equation of a ship that has a 90 degree right angle turn back to origin
+
 n = 25
 ax_factor = 0
 init_guess = [1,1]
-TMax = 100
+TMax = 100 # max time
+A = 22 # amplitude
 
 def equation(t):
-    A = 22     # amplitude (adjust as you like)
     return A * np.sin(np.pi * t / TMax)
 
 def line_eq(vars):
