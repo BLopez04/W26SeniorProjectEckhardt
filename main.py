@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # Parameters
 n = 25
 TMax = 100  # max time
-A = 0.6     # fraction of the speed of light
+A = 0.9     # fraction of the speed of light
 
 # Ship Worldline 1 (sinusoidal)
 def equation(t):
@@ -90,14 +90,14 @@ plt.legend()
 plt.figure(figsize=(8, 8))
 
 arrival_spacing = np.diff(arrival_times)
-# Stationary reference line
-dt_proper = tau_emit[1] - tau_emit[0]
 # arrival spacing vs emission time
-plt.plot(t_emit[1:], arrival_spacing,
+plt.plot(arrival_times[:-1], arrival_spacing,
          color="black", linewidth=2, label="Arrival-time spacing (Doppler effect)")
 
+dt_arrival_ref = t_emit[1] - t_emit[0]
+
 # speed of light reference with constant spacing
-plt.axhline(dt_proper,
+plt.axhline(dt_arrival_ref,
             color="red", linestyle="--", linewidth=2,
             label="Constant spacing (stationary source)")
 
@@ -128,14 +128,14 @@ arrival_times_turn = t_emit_turn + x_emit_turn
 ## Figure 2A- Minkowski diagram for sharp turn line
 
 plt.figure(figsize=(8, 8))
-for i in range(0, len(t_emit), n):
+for i in range(0, len(t_emit_turn), n):
     t_s = t_emit_turn[i]
     x_s = x_emit_turn[i]
     t_arr = arrival_time(t_s, x_s)
     plt.plot([x_s, 0], [t_s, t_arr], color="green", alpha=0.6)
 
 # Ship Worldline 2
-plt.plot([equation_turn(t) for t in t_grid], t_grid, label=r"Ship Worldline 1 (Sinusoidal)", color="blue", linewidth=2)
+plt.plot([equation_turn(t) for t in t_grid], t_grid, label=r"Ship Worldline 2 (90 degree turn)", color="blue", linewidth=2)
 # Speed of light worldline
 plt.plot(t_grid, t_grid, label=r"Speed of Light worldline: x(t) = t", color="red", linewidth=2)
 
@@ -155,11 +155,12 @@ plt.figure(figsize=(8, 8))
 arrival_spacing_turn = np.diff(arrival_times_turn)
 
 # arrival spacing vs emission time
-plt.plot(t_emit_turn[1:], arrival_spacing_turn,
+plt.plot(arrival_times_turn[:-1], arrival_spacing_turn,
          color="black", linewidth=2, label="Arrival-time spacing (Doppler effect)")
 
-# speed of light reference with constant spacing
-plt.axhline(dt_proper,
+
+dt_arrival_ref = t_emit_turn[1] - t_emit_turn[0]
+plt.axhline(dt_arrival_ref,
             color="red", linestyle="--", linewidth=2,
             label="Constant spacing (stationary source)")
 
