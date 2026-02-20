@@ -10,15 +10,14 @@ import matplotlib.pyplot as plt
 
 # Parameters
 n = 25
-TMax = 100 # max time
-A = 22 # amplitude
+TMax = 100  # max time
+A = 0.6     # fraction of the speed of light
 
 # Ship Worldline 1 (sinusoidal)
 def equation(t):
-    return A * np.sin(np.pi * t / TMax)
-
+    return (A * TMax / np.pi) * np.sin(np.pi * t / TMax)
 def velocity(t):
-    return A * (np.pi / TMax) * np.cos(np.pi * t / TMax)
+    return A * np.cos(np.pi * t / TMax)
 
 def gamma(t):
     v = velocity(t)
@@ -27,13 +26,12 @@ def gamma(t):
 # Ship Worldline 2 (Sharp angle turn)
 def equation_turn(t):
     if t < TMax/2:
-        return A * (t / (TMax/2)) # move away
+        return A * t
     else:
-        return A * (1 - (t - TMax/2) / (TMax/2)) # return back
+        return A * (TMax - t)
 
 def velocity_turn(t):
-    v = A / (TMax/2)
-    return np.where(t < TMax/2, v, -v)
+    return np.where(t < TMax/2, A, -A)
 
 def gamma_turn(t):
     v = velocity_turn(t)
@@ -48,24 +46,16 @@ def arrival_time(t_s, x_s):
 t_grid = np.linspace(0, TMax, 400)
 dt = t_grid[1] - t_grid[0] # difference in emission times
 
+# ----------------------------------------
+# Wordline 1
+# ----------------------------------------
+
 # Values for Sinusoidal line
 gamma_vals = gamma(t_grid)
 proper_time = np.cumsum(dt / gamma_vals)
 
-# Emission events at equal intervals for Sinusoidal line
 tau_emit = np.linspace(0, proper_time[-1], 400)
 t_emit = np.interp(tau_emit, proper_time, t_grid)
-
-# Values for linear line
-gamma_vals_turn = gamma_turn(t_grid)
-proper_time_turn = np.cumsum(dt / gamma_vals_turn)
-
-tau_emit_turn = np.linspace(0, proper_time_turn[-1], 400)
-t_emit_turn = np.interp(tau_emit_turn, proper_time_turn, t_grid)
-
-# ----------------------------------------
-# Wordline 1
-# ----------------------------------------
 
 # positions at emission times
 x_emit = equation(t_emit)
@@ -124,6 +114,13 @@ plt.legend()
 # Wordline 2
 # ----------------------------------------
 
+# Values for linear line
+gamma_vals_turn = gamma_turn(t_grid)
+proper_time_turn = np.cumsum(dt / gamma_vals_turn)
+
+tau_emit_turn = np.linspace(0, proper_time_turn[-1], 400)
+t_emit_turn = np.interp(tau_emit_turn, proper_time_turn, t_grid)
+
 # positions at emission times
 x_emit_turn = np.array([equation_turn(t) for t in t_emit_turn])
 arrival_times_turn = t_emit_turn + x_emit_turn
@@ -132,7 +129,7 @@ arrival_times_turn = t_emit_turn + x_emit_turn
 
 plt.figure(figsize=(8, 8))
 for i in range(0, len(t_emit), n):
-    t_s = t_emit[i]
+    t_s = t_emit_turn[i]
     x_s = x_emit_turn[i]
     t_arr = arrival_time(t_s, x_s)
     plt.plot([x_s, 0], [t_s, t_arr], color="green", alpha=0.6)
