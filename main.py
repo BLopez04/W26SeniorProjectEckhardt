@@ -4,75 +4,72 @@ from scipy.optimize import fsolve
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
-plt.figure(figsize=(8, 8))
-
-
 # Add Lorentz Factor to space out the green lines based on velocity of the ship
 # Lorentz factor based off of the velocity of the ship (the position derivative)
 # Add another equation of a ship that has a 90 degree right angle turn back to origin
 
+# Parameters
 n = 25
-ax_factor = 0
-init_guess = [1,1]
 TMax = 100 # max time
 A = 22 # amplitude
 
+# Ship Worldline 1 (sinusoidal)
 def equation(t):
     return A * np.sin(np.pi * t / TMax)
 
-def line_eq(vars):
-    x, y = vars
-    spd_light = y + x - ax_factor      # light ray
-    given_eq = x - equation(y)         # ship worldline
-    return [spd_light, given_eq]
+def velocity(t):
+    return A * (np.pi / TMax) * np.cos(np.pi * t / TMax)
 
+def gamma(t):
+    v = velocity(t)
+    return 1.0 / np.sqrt(1 - v**2)
 
-time_values = np.linspace(0, TMax, 400)
-# difference in emission times
-dt_emit = time_values[1] - time_values[0]
-x_values = equation(time_values)
-line_t = time_values.copy() # timestep values for t axis
+# Ship Worldline 2 (Sharp angle turn)
+def equation_turn(t):
+    if t < TMax/2:
+        return A * (t / (TMax/2)) # move away
+    else:
+        return A * (1 - (t - TMax/2) / (TMax/2)) # return back
 
-# list of intersections between equation and spd of light line
-inter_lst = np.zeros((len(time_values),2))
+# Light pulse arrival time
+def arrival_time(t_s, x_s):
+    return t_s + x_s
 
-indx = 0
-for i in line_t:
-    ax_factor = i #increment time displacement
-    intersection = fsolve(line_eq, [0,0])
-    inter_lst[indx] = intersection
-    indx += 1
+# Time grid
 
-pts_x = np.array([])
-pts_t = np.array([])
-for i in range(len(line_t)):
-    x1, t1 = 0, line_t[i]
-    x2, t2 = inter_lst[i]
-    pts_x = np.append(pts_x, x1)
-    pts_x = np.append(pts_x, x2)
-    pts_t = np.append(pts_t, t1)
-    pts_t = np.append(pts_t, t2)
+t_grid = np.linspace(0, TMax, 400)
+dt = t_grid[1] - t_grid[0] # difference in emission times
 
+gamma_vals = gamma(t_grid)
+proper_time = np.cumsum(dt / gamma_vals)
 
-pts_x_col, pts_t_col = pts_x.reshape(-1,1), pts_t.reshape(-1,1)
-pts_lst = np.concatenate((pts_x_col, pts_t_col), axis=1)
+# Emission events at equal intervals
+tau_emit = np.linspace(0, proper_time[-1], 400)
+t_emit = np.interp(tau_emit, proper_time, t_grid)
 
-## Figure 1 - Minkowski diagram
+# ----------------------------------------
+# Wordline 1
+# ----------------------------------------
 
-indx = 0
-for i in range(0, len(pts_x), 2 * n):
-    plt.plot(pts_x[i:i+2], pts_t[i:i+2],
-             color='green', alpha=0.6)
+# positions at emission times
+x_emit = equation(t_emit)
+arrival_times = t_emit + x_emit
 
+## Figure 1A - Minkowski diagram for sinusoidal line
 
-# Ship worldline
-plt.plot(x_values, time_values, label=r"Ship worldline", color="blue", linewidth=2)
+plt.figure(figsize=(8, 8))
+for i in range(0, len(t_emit), n):
+    t_s = t_emit[i]
+    x_s = x_emit[i]
+    t_arr = arrival_time(t_s, x_s)
+    plt.plot([x_s, 0], [t_s, t_arr], color="green", alpha=0.6)
+
+# Ship Worldline 1
+plt.plot(equation(t_grid), t_grid, label=r"Ship Worldline 1 (Sinusoidal)", color="blue", linewidth=2)
 # Speed of light worldline
-plt.plot(time_values, time_values, label=r"Speed of Light worldline: x(t) = t", color="red", linewidth=2)
+plt.plot(t_grid, t_grid, label=r"Speed of Light worldline: x(t) = t", color="red", linewidth=2)
 
-arrival_times = time_values + x_values
-
-arrival_spacing = np.diff(arrival_times)
+# Pulse arrivals (only a subsample)
 
 plt.scatter(
     np.zeros_like(arrival_times[::n]),
@@ -83,31 +80,28 @@ plt.scatter(
     label="Pulse arrivals at origin"
 )
 
-
 plt.grid(True, linestyle="--", alpha=0.7)
 plt.axhline(0, color="black", linewidth=1)
 plt.axvline(0, color="black", linewidth=1)
 plt.xlabel("x: distance from origin")
 plt.ylabel("t: time")
 
-plt.title("Comparison: Linear vs Parabolic Worldlines")
-
+plt.title("Minkowski Diagram with Lorentz Factor and Sinusoidal turn")
 plt.legend()
 
-# Figure 2 - Arrival-time spacing (Doppler effect)
+# Figure 1B - Arrival-time spacing (Doppler effect)
 
 plt.figure(figsize=(8, 8))
 
-arrival_times = time_values + x_values
-
 arrival_spacing = np.diff(arrival_times)
-
+# Stationary reference line
+dt_proper = tau_emit[1] - tau_emit[0]
 # arrival spacing vs emission time
-plt.plot(time_values[1:], arrival_spacing,
+plt.plot(t_emit[1:], arrival_spacing,
          color="black", linewidth=2, label="Arrival-time spacing (Doppler effect)")
 
 # speed of light reference with constant spacing
-plt.axhline(dt_emit,
+plt.axhline(dt_proper,
             color="red", linestyle="--", linewidth=2,
             label="Constant spacing (stationary source)")
 
@@ -117,6 +111,73 @@ plt.axvline(0, color="black", linewidth=1)
 plt.xlabel("s: emission time")
 plt.ylabel("t': arrival spacing")
 
-plt.title("Pulse Arrival-Time Spacing (Doppler Effect)")
+plt.title("Pulse Arrival-Time Spacing (Doppler Effect) on sinusoidal turn")
 plt.legend()
+
+# ----------------------------------------
+# Wordline 2
+# ----------------------------------------
+
+# positions at emission times
+x_emit_turn = np.array([equation_turn(t) for t in t_emit])
+arrival_times_turn = t_emit + x_emit_turn
+
+## Figure 2A- Minkowski diagram for sharp turn line
+
+plt.figure(figsize=(8, 8))
+for i in range(0, len(t_emit), n):
+    t_s = t_emit[i]
+    x_s = x_emit_turn[i]
+    t_arr = arrival_time(t_s, x_s)
+    plt.plot([x_s, 0], [t_s, t_arr], color="green", alpha=0.6)
+
+# Ship Worldline 2
+plt.plot([equation_turn(t) for t in t_grid], t_grid, label=r"Ship Worldline 1 (Sinusoidal)", color="blue", linewidth=2)
+# Speed of light worldline
+plt.plot(t_grid, t_grid, label=r"Speed of Light worldline: x(t) = t", color="red", linewidth=2)
+
+# Pulse arrivals (only a subsample)
+
+plt.scatter(
+    np.zeros_like(arrival_times_turn[::n]),
+    arrival_times[::n],
+    color="black",
+    s=15,
+    zorder=5,
+    label="Pulse arrivals at origin"
+)
+
+plt.grid(True, linestyle="--", alpha=0.7)
+plt.axhline(0, color="black", linewidth=1)
+plt.axvline(0, color="black", linewidth=1)
+plt.xlabel("x: distance from origin")
+plt.ylabel("t: time")
+
+plt.title("Minkowski Diagram with Lorentz Factor and 90° Turn")
+plt.legend()
+
+# Figure 1B - Arrival-time spacing (Doppler effect)
+
+plt.figure(figsize=(8, 8))
+
+arrival_spacing_turn = np.diff(arrival_times_turn)
+
+# arrival spacing vs emission time
+plt.plot(t_emit[1:], arrival_spacing_turn,
+         color="black", linewidth=2, label="Arrival-time spacing (Doppler effect)")
+
+# speed of light reference with constant spacing
+plt.axhline(dt_proper,
+            color="red", linestyle="--", linewidth=2,
+            label="Constant spacing (stationary source)")
+
+plt.axhline(0, color="black", linewidth=1)
+plt.axvline(0, color="black", linewidth=1)
+
+plt.xlabel("s: emission time")
+plt.ylabel("t': arrival spacing")
+
+plt.title("Pulse Arrival-Time Spacing (Doppler Effect) on sharp turn")
+plt.legend()
+
 plt.show()
