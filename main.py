@@ -5,19 +5,23 @@ matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
 
-# The spacing between green lines should be constant. they get sent out from the blue lines
-# the angle is what makes the difference
 
-# The line between the greens should actually constant
-# THe difference in the arrival spacing is determined by the angle of arrival
-# Nominal line should be based off every individual second.
+# Calculate time difference from start to end
+# Mark ticks that happen every dt on the y axis stationary.
+# Count ticks on blue axis and y axis.
+
+# Get rid of that weird artifact at the last second of the sinusoidal line (where it moves up)
+
+
+# Add a sinusoidal curve that has a greater "hump"
+
 
 plt.rc('font', size=15)
 
 # Parameters
-n = 7
+n = 5
 TMax = 100  # max time
-A = 0.7     # fraction of the speed of light
+A = 0.6     # fraction of the speed of light
 dt_emit = 1.0
 
 # Ship Worldline 1 (sinusoidal)
